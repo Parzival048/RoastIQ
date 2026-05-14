@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { analyzeWithAI } from "@/lib/ai-analysis";
 import { generateMockAnalysis } from "@/lib/mock-analysis";
 import type { AnalysisMode } from "@/types";
 
@@ -25,10 +26,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = generateMockAnalysis(url, mode);
+    if (process.env.OPENAI_API_KEY) {
+      const result = await analyzeWithAI(url, mode);
+      return NextResponse.json(result);
+    }
 
+    const result = generateMockAnalysis(url, mode);
     return NextResponse.json(result);
-  } catch {
+  } catch (error) {
+    console.error("Analysis error:", error);
     return NextResponse.json(
       { error: "Failed to analyze website" },
       { status: 500 }

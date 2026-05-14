@@ -9,9 +9,8 @@ import { Input } from "@/components/ui/input";
 import { AnalysisResults } from "./analysis-results";
 import { ModeSelector } from "./mode-selector";
 import type { AnalysisMode, AnalysisResult } from "@/types";
-import { generateMockAnalysis } from "@/lib/mock-analysis";
 
-type AnalysisState = "idle" | "analyzing" | "complete";
+type AnalysisState = "idle" | "analyzing" | "complete" | "error";
 
 export function RoastAnalyzer() {
   const searchParams = useSearchParams();
@@ -22,6 +21,7 @@ export function RoastAnalyzer() {
   const [state, setState] = useState<AnalysisState>("idle");
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [progress, setProgress] = useState(0);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleAnalyze = useCallback(
     async (e: React.FormEvent) => {
@@ -30,24 +30,38 @@ export function RoastAnalyzer() {
 
       setState("analyzing");
       setProgress(0);
+      setErrorMsg("");
 
-      const steps = [
-        "Capturing screenshot...",
-        "Analyzing visual hierarchy...",
-        "Evaluating trust signals...",
-        "Checking conversion flow...",
-        "Generating roast...",
-        "Calculating scores...",
-      ];
+      const progressInterval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 90) return prev;
+          return prev + (90 - prev) * 0.1;
+        });
+      }, 300);
 
-      for (let i = 0; i < steps.length; i++) {
-        setProgress(((i + 1) / steps.length) * 100);
-        await new Promise((r) => setTimeout(r, 500 + Math.random() * 500));
+      try {
+        const response = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: url.trim(), mode }),
+        });
+
+        clearInterval(progressInterval);
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Analysis failed");
+        }
+
+        setProgress(100);
+        const analysisResult: AnalysisResult = await response.json();
+        setResult(analysisResult);
+        setState("complete");
+      } catch (err) {
+        clearInterval(progressInterval);
+        setErrorMsg(err instanceof Error ? err.message : "Analysis failed. Please try again.");
+        setState("error");
       }
-
-      const mockResult = generateMockAnalysis(url.trim(), mode);
-      setResult(mockResult);
-      setState("complete");
     },
     [url, mode]
   );
@@ -108,6 +122,29 @@ export function RoastAnalyzer() {
         </form>
       </motion.div>
 
+      {/* Error State */}
+      <AnimatePresence>
+        {state === "error" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="max-w-lg mx-auto mb-8"
+          >
+            <div className="glass rounded-xl p-6 text-center border border-red-500/30">
+              <p className="text-red-400 text-sm mb-3">{errorMsg}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setState("idle")}
+              >
+                Try Again
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Loading State */}
       <AnimatePresence>
         {state === "analyzing" && (
@@ -140,7 +177,7 @@ export function RoastAnalyzer() {
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">
-                Analyzing {url}...
+                AI is analyzing {url}...
               </p>
               <div className="mt-4 w-full bg-secondary rounded-full h-1.5">
                 <motion.div
