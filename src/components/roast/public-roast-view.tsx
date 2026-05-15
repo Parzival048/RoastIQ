@@ -1,15 +1,22 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Share2, ExternalLink, Flame } from "lucide-react";
+import { Share2, ExternalLink, Flame, Download } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ScoreCard } from "./score-card";
 import { RoastCard } from "./roast-card";
 import type { AnalysisResult } from "@/types";
 import Link from "next/link";
+import Image from "next/image";
 
-export function PublicRoastView({ result }: { result: AnalysisResult }) {
+export function PublicRoastView({
+  result,
+  slug,
+}: {
+  result: AnalysisResult;
+  slug?: string;
+}) {
   const handleShare = () => {
     const text = `Check out this website roast by @RoastIQ\n\nScore: ${result.overallScore}/100\n\nGet your website roasted at roastiq.ai`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
@@ -18,7 +25,6 @@ export function PublicRoastView({ result }: { result: AnalysisResult }) {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -37,7 +43,23 @@ export function PublicRoastView({ result }: { result: AnalysisResult }) {
         </p>
       </motion.div>
 
-      {/* Overall Score */}
+      {result.screenshotUrl && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.05 }}
+          className="glass rounded-2xl overflow-hidden max-w-3xl mx-auto mb-8"
+        >
+          <Image
+            src={result.screenshotUrl}
+            alt={`Screenshot of ${result.url}`}
+            width={1280}
+            height={800}
+            className="w-full h-auto"
+          />
+        </motion.div>
+      )}
+
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -48,11 +70,21 @@ export function PublicRoastView({ result }: { result: AnalysisResult }) {
           {result.overallScore}
         </div>
         <p className="text-sm text-muted-foreground mb-4">/100 Overall Score</p>
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex items-center justify-center gap-3 flex-wrap">
           <Button size="sm" variant="outline" onClick={handleShare}>
             <Share2 className="mr-1.5 h-3.5 w-3.5" />
             Share on X
           </Button>
+          {slug && (
+            <Link
+              href={`/api/report?scanId=${result.id}`}
+              target="_blank"
+              className={cn(buttonVariants({ size: "sm", variant: "outline" }))}
+            >
+              <Download className="mr-1.5 h-3.5 w-3.5" />
+              Download PDF
+            </Link>
+          )}
           <Link
             href="/roast"
             className={cn(
@@ -66,21 +98,18 @@ export function PublicRoastView({ result }: { result: AnalysisResult }) {
         </div>
       </motion.div>
 
-      {/* Scores */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
         {result.scores.map((score, i) => (
           <ScoreCard key={score.name} score={score} index={i} />
         ))}
       </div>
 
-      {/* Roast Comments */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
         {result.roastComments.map((comment, i) => (
           <RoastCard key={comment.category} comment={comment} index={i} />
         ))}
       </div>
 
-      {/* CTA */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}

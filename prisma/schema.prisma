@@ -13,6 +13,8 @@ model User {
   email         String?   @unique
   emailVerified DateTime?
   image         String?
+  password      String?
+  role          String    @default("user")
   accounts      Account[]
   sessions      Session[]
   scans         Scan[]
@@ -69,6 +71,7 @@ model Scan {
   heroRewrite         String?
   ctaSuggestions      Json
   isPublic            Boolean  @default(false)
+  isFeatured          Boolean  @default(false)
   slug                String?  @unique
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
@@ -77,6 +80,7 @@ model Scan {
   @@index([userId])
   @@index([slug])
   @@index([isPublic])
+  @@index([isFeatured])
 }
 
 model Subscription {
