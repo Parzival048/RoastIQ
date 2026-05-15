@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Flame } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
+import { Menu, X, Flame, LogOut, LayoutDashboard, Shield } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -16,6 +17,8 @@ const navLinks = [
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { data: session } = useSession();
+  const user = session?.user as { name?: string; role?: string } | undefined;
 
   return (
     <motion.nav
@@ -49,14 +52,43 @@ export function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
+            {session ? (
+              <>
+                {user?.role === "admin" && (
+                  <Link
+                    href="/admin"
+                    className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+                  >
+                    <Shield className="mr-1.5 h-3.5 w-3.5" />
+                    Admin
+                  </Link>
+                )}
+                <Link
+                  href="/dashboard"
+                  className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+                >
+                  <LayoutDashboard className="mr-1.5 h-3.5 w-3.5" />
+                  Dashboard
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                >
+                  <LogOut className="mr-1.5 h-3.5 w-3.5" />
+                  Sign Out
+                </Button>
+              </>
+            ) : (
+              <Link
+                href="/auth/signin"
+                className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+              >
+                Sign In
+              </Link>
+            )}
             <Link
-              href="/dashboard"
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
-            >
-              Sign In
-            </Link>
-            <Link
-              href="#analyze"
+              href="/roast"
               className={cn(
                 buttonVariants({ size: "sm" }),
                 "roast-gradient text-white border-0 hover:opacity-90"
@@ -96,21 +128,40 @@ export function Navbar() {
                 </a>
               ))}
               <div className="pt-3 border-t border-border space-y-2">
+                {session ? (
+                  <>
+                    <Link
+                      href="/dashboard"
+                      className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "w-full")}
+                      onClick={() => setMobileOpen(false)}
+                    >
+                      Dashboard
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => signOut({ callbackUrl: "/" })}
+                    >
+                      Sign Out
+                    </Button>
+                  </>
+                ) : (
+                  <Link
+                    href="/auth/signin"
+                    className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "w-full")}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Sign In
+                  </Link>
+                )}
                 <Link
-                  href="/dashboard"
-                  className={cn(
-                    buttonVariants({ variant: "ghost", size: "sm" }),
-                    "w-full"
-                  )}
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="#analyze"
+                  href="/roast"
                   className={cn(
                     buttonVariants({ size: "sm" }),
                     "w-full roast-gradient text-white border-0"
                   )}
+                  onClick={() => setMobileOpen(false)}
                 >
                   Roast My Website
                 </Link>

@@ -108,7 +108,13 @@ export function AnalysisResults({ result }: { result: AnalysisResult }) {
             <Share2 className="mr-1.5 h-3.5 w-3.5" />
             Share on X
           </Button>
-          <Button size="sm" variant="outline">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              window.open(`/api/report?scanId=${result.id}`, "_blank");
+            }}
+          >
             <Download className="mr-1.5 h-3.5 w-3.5" />
             Export PDF
           </Button>
