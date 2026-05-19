@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: roastiq
+      POSTGRES_PASSWORD: roastiq123
+      POSTGRES_DB: roastiq
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roastiq -d roastiq"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://roastiq:roastiq123@db:5432/roastiq?schema=public"
+      NEXTAUTH_URL: "http://localhost:3000"
+      NEXTAUTH_SECRET: "${NEXTAUTH_SECRET}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
+      GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
+      NEXT_PUBLIC_GOOGLE_AUTH_ENABLED: "${NEXT_PUBLIC_GOOGLE_AUTH_ENABLED:-false}"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

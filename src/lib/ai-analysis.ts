@@ -1,9 +1,11 @@
 import OpenAI from "openai";
 import type { AnalysisMode, AnalysisResult, RoastComment, ScoreCategory } from "@/types";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getOpenAIClient() {
+  return new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+}
 
 function getSystemPrompt(mode: AnalysisMode): string {
   const baseContext = `You are RoastIQ, an AI website analysis expert. You analyze websites for trust, design quality, conversion optimization, and user experience.`;
@@ -96,7 +98,7 @@ export async function analyzeWithAI(
   url: string,
   mode: AnalysisMode
 ): Promise<AnalysisResult> {
-  const response = await openai.chat.completions.create({
+  const response = await getOpenAIClient().chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       { role: "system", content: getSystemPrompt(mode) },
